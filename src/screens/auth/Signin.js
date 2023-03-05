@@ -1,4 +1,5 @@
 import {
+  Alert,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -6,28 +7,56 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {memo} from 'react';
+import React, {memo, useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
+import auth from '@react-native-firebase/auth';
 
 const Signin = () => {
   const navigation = useNavigation();
+  const [inputValues, setInputValues] = useState({});
+
+  const onChange = (value, key) => {
+    setInputValues(vals => ({
+      ...vals,
+      [key]: value,
+    }));
+  };
+
+  const onSubmit = () => {
+    auth()
+      .signInWithEmailAndPassword(inputValues.email, inputValues.password)
+      .then(() => {
+        console.log('User signed signed in!');
+      })
+      .catch(error => {
+        if (error.code === 'auth/email-already-in-use') {
+          Alert.alert('That email address is already in use!');
+        } else if (error.code === 'auth/invalid-email') {
+          Alert.alert('That email address is invalid!');
+        } else {
+          Alert.alert('Error: ', error.message);
+        }
+      });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Welcome back!</Text>
         <TextInput
+          onChangeText={val => onChange(val, 'email')}
           style={styles.textInput}
           placeholder="Email"
           keyboardType="email-address"
         />
         <TextInput
+          onChangeText={val => onChange(val, 'password')}
           style={styles.textInput}
           placeholder="Password"
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.loginBtn} onPress={() => {}}>
+        <TouchableOpacity style={styles.loginBtn} onPress={onSubmit}>
           <Text style={styles.btnText}>Log in</Text>
         </TouchableOpacity>
 

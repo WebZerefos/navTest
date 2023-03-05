@@ -1,50 +1,104 @@
 import {
+  Alert,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {memo} from 'react';
+import React, {memo, useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
+import auth from '@react-native-firebase/auth';
 
 const Signup = () => {
   const navigation = useNavigation();
+  const [inputValues, setInputValues] = useState({});
+
+  const onChange = (value, key) => {
+    setInputValues(vals => ({
+      ...vals,
+      [key]: value,
+    }));
+  };
+
+  const onSubmit = () => {
+    if (!inputValues.first_name || !inputValues.last_name) {
+      Alert.alert('Please enter a first name and last name');
+      return;
+    }
+    if (inputValues.password !== inputValues.confirm_password) {
+      Alert.alert('Passwords do not match');
+      return;
+    }
+
+    auth()
+      .createUserWithEmailAndPassword(inputValues.email, inputValues.password)
+      .then(() => {
+        auth().currentUser.updateProfile({
+          displayName: `${inputValues.first_name} ${inputValues.last_name}`,
+        });
+      })
+      .catch(error => {
+        if (error.code === 'auth/email-already-in-use') {
+          console.log('That email address is already in use!');
+        }
+
+        if (error.code === 'auth/invalid-email') {
+          console.log('That email address is invalid!');
+        }
+
+        console.error(error);
+      });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Join the hub!</Text>
-        <TextInput style={styles.textInput} placeholder="First Name" />
-        <TextInput style={styles.textInput} placeholder="Last Name" />
-        <TextInput
-          style={styles.textInput}
-          placeholder="Email"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.textInput}
-          placeholder="Password"
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.textInput}
-          placeholder="Confirm Password"
-          secureTextEntry
-        />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Join the hub!</Text>
+          <TextInput
+            onChangeText={val => onChange(val, 'first_name')}
+            style={styles.textInput}
+            placeholder="First Name"
+          />
+          <TextInput
+            onChangeText={val => onChange(val, 'last_name')}
+            style={styles.textInput}
+            placeholder="Last Name"
+          />
+          <TextInput
+            onChangeText={val => onChange(val, 'email')}
+            style={styles.textInput}
+            placeholder="Email"
+            keyboardType="email-address"
+          />
+          <TextInput
+            onChangeText={val => onChange(val, 'password')}
+            style={styles.textInput}
+            placeholder="Password"
+            secureTextEntry
+          />
+          <TextInput
+            onChangeText={val => onChange(val, 'confirm_password')}
+            style={styles.textInput}
+            placeholder="Confirm Password"
+            secureTextEntry
+          />
 
-        <TouchableOpacity style={styles.createBtn} onPress={() => {}}>
-          <Text style={styles.btnText}>Create account</Text>
-        </TouchableOpacity>
-
-        <View style={styles.signupContainer}>
-          <Text style={styles.notRegisterText}>Already registered?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signin')}>
-            <Text style={styles.signupBtnText}> Sign in!</Text>
+          <TouchableOpacity style={styles.createBtn} onPress={onSubmit}>
+            <Text style={styles.btnText}>Create account</Text>
           </TouchableOpacity>
+
+          <View style={styles.signupContainer}>
+            <Text style={styles.notRegisterText}>Already registered?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Signin')}>
+              <Text style={styles.signupBtnText}> Sign in!</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
